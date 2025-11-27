@@ -1,0 +1,286 @@
+html,
+body {
+  position: relative;
+  margin: 1px;
+  padding: 0px;
+  background-color: lightblue;
+  max-width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+body {
+  display: flexbox;
+  flex-direction: column;
+}
+
+.actions {
+  padding: 0.25% 0.25%;
+  font-size: 11px;
+  border: 5px solid darkcyan;
+  height: 24px;
+}
+
+.solitaire {
+  position: relative;
+}
+
+$card-w: 225px;
+$card-h: 315px;
+
+.card {
+  width: $card-w;
+  height: $card-h;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  border: 2px solid black;
+  border-radius: 22px;
+  cursor: pointer;
+
+  // clubs (♣), diamonds (♦), hearts (♥) and spades (♠)
+  $type: s d h c;
+  $type: (
+    h: 1,
+    s: 2,
+    d: 3,
+    c: 4,
+  );
+
+@each $t, $v in $type {
+  @for $i from 1 through 13 {
+    &--#{$t}-#{$i} {
+      background-position: -#{($card-w * $i - $card-w)} -#{($card-h * $v - $card-h)};
+    }
+  }
+}
+
+&--back {
+  cursor: default;
+  background-position: 0 0;
+  background-color: #02027f;
+  background: linear-gradient(45deg, red, blue);
+}
+
+}
+
+.top {
+  height: $card-h + 20px;
+  width: 100%;
+  position: relative;
+  border-bottom: 5px solid black;
+  padding: 5px;
+}
+
+.finish {
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  top: 10px;
+  left: 47%;
+}
+
+.finish-deck {
+  position: relative;
+  width: $card-w;
+  height: $card-h;
+  margin-left: 20px;
+  border: 2px solid;
+  border-color: black;
+  border-radius: 18px;
+  background-image: linear-gradient(darkblue, lightblue, darkblue);
+
+  .card {
+    position: absolute;
+  }
+}
+
+.deck {
+  position: relative;
+  top: 10px;
+  left: 10px;
+
+  &-pile {
+    width: $card-w;
+    height: $card-h;
+    position: absolute;
+
+    .card+.card {
+      margin-top: 4px;
+      margin-left: 2px;
+      cursor: pointer;
+
+      +.card {
+        margin-left: 4px;
+        margin-top: 8px;
+      }
+    }
+  }
+
+  &-deal {
+    position: relative;
+    left: 240px;
+
+    .card:last-child {
+      left: 80px;
+    }
+
+    .card:nth-last-child(2) {
+      left: 40px;
+    }
+
+    .card:first-child {
+      left: 0;
+    }
+
+    .card:first-child+.card:last-child {
+      left: 40px;
+    }
+  }
+}
+
+.board {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  margin-top: 10px;
+  margin-left: 10px;
+}
+
+.board-deck {
+  margin-right: $card-w + 20px;
+  margin-top: 15px;
+  position: relative;
+  width: $card-w;
+  height: $card-h;
+  background-color: black;
+  border-radius: 18px;
+
+  .card--front>.card--front {
+    top: 15px;
+  }
+
+  .card--back {
+
+    >.card--front,
+    >.card--back {
+      top: 10px;
+    }
+  }
+}
+
+.highlight {
+  border: 5px solid red;
+}
+
+.victory-container-outer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 900px;
+  height: 500px;
+  border: 5px solid black;
+  background-image: linear-gradient(darkblue, lightblue, darkblue)
+}
+
+.victory-container-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.victory-text {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-size: 100px;
+}
+
+.victory-subtext {
+  position: relative;
+  top: 15%;
+  text-align: center;
+  font-size: 30px;
+}
+
+.victory-leaderboard-button {
+  position: relative;
+  top: 75%;
+  left: 37.5%;
+  font-size: 30px;
+}
+
+.victory-container-inner>form {
+  position: relative;
+  top: 70%;
+  left: 37.5%;
+  font-size: 30px;
+}
+
+.victory-container-inner>.thank-you-text {
+  position: relative;
+  top: 52%;
+  left: 34%;
+  font-size: 28px;
+  color: white;
+  width: 288px;
+  background-color: black;
+}
+
+.leaderboard-container-outer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 900px;
+  height: 500px;
+  border: 5px solid black;
+  background-image: linear-gradient(darkblue, lightblue, darkblue)
+}
+
+.leaderboard-container-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  >button {
+    position: relative;
+    left: 0.5%;
+    top: 1%;
+  }
+}
+
+.leaderboard-table {
+  position: relative;
+  left: 20%;
+  top: 5%;
+  border: 1px solid gray;
+  display: block;
+  height: 92.5%;
+  width: 65%;
+  overflow-y: scroll;
+
+  .table-row-names {
+    background-color: lightblue;
+    font-size: 100px;
+    padding-left: 20px;
+    padding-right: 20px;
+    border: 1px solid black;
+    position: sticky;
+    top: 0;
+  }
+
+  >tr,
+  td {
+    border: 1px solid black;
+    background-color: lightblue;
+    text-align: center;
+  }
+}
