@@ -68,6 +68,7 @@ const initializeGame = () => {
         debug.populateDebugElems()
     }
     resetCards()
+    showGreeter()
 }
 
 document.addEventListener('DOMContentLoaded', initializeGame)
@@ -168,6 +169,8 @@ export const gameState: GameState = {
     desk: [],
     /// Sadrži Destination objekte
     destinations: [],
+    /// Ime trentunog igrača
+    player_name: '/'
 }
 
 
@@ -458,6 +461,7 @@ const moveCardToDeck = (cardIndex: number, destinationDeck: string, deckIndex: n
         gameState[destinationDeck as 'finish' | 'desk'][deckIndex as number].cards = gameState[destinationDeck as 'finish' | 'desk'][deckIndex as number].cards.concat(movingArray)
     }
 
+    calculateScore()
     checkFinish()
     if (debugEnabled) {
         console.log(`Moved`)
@@ -472,6 +476,10 @@ const moveCardToDeck = (cardIndex: number, destinationDeck: string, deckIndex: n
 /// Što se dogodi kad kliknemo element
 const handleClick = (index: number, clickedEl: HTMLElement) => (event: MouseEvent) => {
     event.stopPropagation()
+
+    if (document.getElementById('greeter-outer')) {
+        return
+    }
 
     if (clickedEl.classList.contains('card')) {
         return handleCardClick(index, clickedEl)
@@ -602,12 +610,27 @@ const handleCardClick = (cardIndex: number, clickedEL: HTMLElement) => {
 
 /// Provjera da li je igra gotova
 const checkFinish = () => {
+    // Provjera da li je igra gotova
     for (let finishDeckIndex = 0; finishDeckIndex <= gameState.finish.length - 1; finishDeckIndex++) {
         if (gameState.finish[finishDeckIndex].cards.length !== 13) {
             return
         }
     }
     displayFinish()
+}
+
+// Kalkulacija bodova, 1 karta na finish-u = 1 bod
+const calculateScore = () => {
+    let score = 0
+    for (let finishDeckIndex = 0; finishDeckIndex <= gameState.finish.length - 1; finishDeckIndex++) {
+        score += gameState.finish[finishDeckIndex].cards.length
+    }
+
+    const scoreEl = document.getElementById('score')
+    if (scoreEl) {
+        scoreEl.innerText = `Bodovi: ${score}`
+    }
+    return score
 }
 
 /// Pokazujemo igraču završetak
@@ -634,42 +657,266 @@ export const displayFinish = () => {
     const finishTime = calculateEndTime()
     victorySubText.innerText = `Vaše vrijeme:\n ${finishTime}`
     victoryText.appendChild(victorySubText)
+}
 
-    const leaderboardForm = document.createElement('form')
+const createContainerElems = (classBaseName: string): { outerContainerEl: HTMLElement, innerContainerEl: HTMLElement } => {
+    let outerContainerEl = document.getElementById(`${classBaseName}-outer`)
+    if (!outerContainerEl) {
+        outerContainerEl = document.createElement('div')
+        outerContainerEl.classList.add(`${classBaseName}-outer`)
+        outerContainerEl.setAttribute("id", `${classBaseName}-outer`)
+        document.body.appendChild(outerContainerEl)
+    }
+
+    let innerContainerEl = document.getElementById(`${classBaseName}-inner`)
+    if (!innerContainerEl) {
+        innerContainerEl = document.createElement('div')
+        innerContainerEl.classList.add(`${classBaseName}-inner`)
+        innerContainerEl.setAttribute("id", `${classBaseName}-inner`)
+        document.body.appendChild(innerContainerEl)
+    }
+    outerContainerEl.appendChild(innerContainerEl)
+
+    return { outerContainerEl, innerContainerEl }
+}
+
+const showGreeter = () => {
+    const { outerContainerEl: _, innerContainerEl } = createContainerElems('greeter')
+
+    gameState.player_name = '/'
+    updateCurrentPlayer()
+
+    const greetText = document.createElement('p')
+    greetText.classList.add('greeter-welcome')
+    greetText.innerText = 'Dobrodošli!'
+    innerContainerEl.appendChild(greetText)
+
+    const loginButton = document.createElement('button')
+    loginButton.innerText = 'Prijava'
+
+    loginButton.addEventListener('click', showLogin)
+    innerContainerEl.appendChild(loginButton)
+
+    const registerButton = document.createElement('button')
+    registerButton.innerText = 'Registracija'
+
+    registerButton.addEventListener('click', showRegister)
+    innerContainerEl.appendChild(registerButton)
+
+}
+
+const closeGreeter = () => {
+    const loginButton = document.getElementById('button')
+    loginButton?.removeEventListener('click', showLogin)
+    const registerButton = document.getElementById('button')
+    registerButton?.removeEventListener('click', showRegister)
+
+    document.getElementById('greeter-outer')?.remove()
+    updateCurrentPlayer()
+}
+
+const updateCurrentPlayer = () => {
+    const currentplayerdiv = document.getElementById('currentplayer')
+    const currentplayertext = document.getElementById('currentplayertext')
+    const logoutLink = document.getElementById('logout')
+    if (gameState.player_name === '/') {
+        if (currentplayerdiv) {
+            currentplayerdiv.style.display = "none"
+        }
+        if (currentplayertext) {
+            currentplayertext.innerText = `Trenutni igrač: /`
+        }
+        return
+    }
+
+    if (currentplayerdiv) {
+        currentplayerdiv.style.display = "flex"
+    }
+    if (currentplayertext) {
+        currentplayertext.innerText = `Trenutni igrač: ${gameState.player_name}`
+    }
+
+    if (logoutLink) {
+        logoutLink.onclick = showGreeter
+    }
+}
+
+const showLogin = () => {
+    const { outerContainerEl, innerContainerEl } = createContainerElems('login')
+
+    const closeButton = document.createElement('a')
+    closeButton.innerText = `✖`
+    innerContainerEl.appendChild(closeButton)
+    const removeOuterContainer = () => {
+        outerContainerEl.remove()
+    }
+    closeButton.onclick = removeOuterContainer
+
+    const prijavaText = document.createElement('p')
+    prijavaText.innerText = 'Prijava'
+    innerContainerEl.appendChild(prijavaText)
+
+    const loginForm = document.createElement('form')
     const nameInput = document.createElement('input')
     nameInput.type = 'text'
     nameInput.name = 'nameInput'
     nameInput.placeholder = 'Vaše ime ovdje...'
 
+    const passwordInput = document.createElement('input')
+    passwordInput.type = 'password'
+    passwordInput.name = 'passInput'
+    passwordInput.placeholder = 'Lozinka...'
+
     const submitNameButton = document.createElement('button')
     submitNameButton.type = 'submit'
-    submitNameButton.innerText = 'Submit'
+    submitNameButton.innerText = 'Prijava'
 
-    leaderboardForm.appendChild(nameInput)
-    leaderboardForm.appendChild(submitNameButton)
-    innerContainerEl.appendChild(leaderboardForm)
+    loginForm.appendChild(nameInput)
+    loginForm.appendChild(passwordInput)
+    loginForm.appendChild(submitNameButton)
+    innerContainerEl.appendChild(loginForm)
 
-    leaderboardForm.addEventListener('submit', (event) => {
+    const loginClick = async (event: Event) => {
         event.preventDefault()
-
+        document.getElementById('error-msg')?.remove()
+        let fail = false
         const nameValue = nameInput.value.trim()
         if (nameValue.length === 0) {
             nameInput.placeholder = 'Ime ne smije biti prazno!'
+            fail = true
+        }
+
+        const passValue = passwordInput.value.trim()
+
+        if (passValue.length < 5) {
+            passwordInput.placeholder = 'Lozinka prekratka!'
+            fail = true
+        }
+
+        if (passValue.length === 0) {
+            passwordInput.placeholder = 'Lozinka ne smije biti prazna!'
+            fail = true
+        }
+
+        if (fail) {
             return
         }
-        leaderboardForm.remove()
-        const thankYouText = document.createElement('p')
-        thankYouText.classList.add('thank-you-text')
-        thankYouText.innerText = "Uspješno predano, hvala!"
-        innerContainerEl.appendChild(thankYouText)
-        writeVictoryToDb({ name: nameValue, time: finishTime })
-    })
 
-    const viewLeaderboardButton = document.createElement('button')
-    viewLeaderboardButton.innerText = 'Pregled tablice'
-    viewLeaderboardButton.classList.add('victory-leaderboard-button')
-    viewLeaderboardButton.onclick = displayLeaderboard
-    innerContainerEl.appendChild(viewLeaderboardButton)
+        if (await verifyLogin(nameValue, passValue)) {
+            outerContainerEl.remove()
+            loginForm.removeEventListener('click', loginClick)
+            gameState.player_name = nameValue
+            closeGreeter()
+            return
+        }
+
+        const errorEl = document.createElement('p')
+        errorEl.classList.add('error-msg')
+        errorEl.setAttribute('id', 'error-msg')
+        errorEl.innerText = 'Netočno ime ili lozinka!'
+        innerContainerEl.appendChild(errorEl)
+    }
+
+    loginForm.addEventListener('submit', loginClick)
+
+}
+
+const showRegister = async () => {
+    const { outerContainerEl, innerContainerEl } = createContainerElems('register')
+
+    const closeButton = document.createElement('a')
+    closeButton.innerText = `✖`
+    innerContainerEl.appendChild(closeButton)
+    const removeOuterContainer = () => {
+        outerContainerEl.remove()
+    }
+    closeButton.onclick = removeOuterContainer
+
+    const RegistracijaText = document.createElement('p')
+    RegistracijaText.innerText = 'Registracija'
+    RegistracijaText.classList.add('regtext')
+    innerContainerEl.appendChild(RegistracijaText)
+
+    const registerForm = document.createElement('form')
+    const nameInput = document.createElement('input')
+    nameInput.type = 'text'
+    nameInput.name = 'nameInput'
+    nameInput.placeholder = 'Vaše ime ovdje...'
+
+    const passwordInput = document.createElement('input')
+    passwordInput.type = 'password'
+    passwordInput.name = 'passInput'
+    passwordInput.placeholder = 'Lozinka...'
+
+    const submitNameButton = document.createElement('button')
+    submitNameButton.type = 'submit'
+    submitNameButton.innerText = 'Registriraj'
+
+    registerForm.appendChild(nameInput)
+    registerForm.appendChild(passwordInput)
+    registerForm.appendChild(submitNameButton)
+    innerContainerEl.appendChild(registerForm)
+
+    registerForm.addEventListener('submit', async (event) => {
+        event.preventDefault()
+        document.getElementById('error-msg')?.remove()
+        let fail = false
+        const nameValue = nameInput.value.trim()
+        if (nameValue.length === 0) {
+            nameInput.placeholder = 'Ime ne smije biti prazno!'
+            fail = true
+        }
+
+        const passValue = passwordInput.value.trim()
+
+        if (passValue.length < 5) {
+            const errorEl = document.createElement('p')
+            errorEl.classList.add('error-msg')
+            errorEl.setAttribute('id', 'error-msg')
+            errorEl.innerText = 'Lozinka mora biti duža od 5 znakova!'
+            innerContainerEl.appendChild(errorEl)
+            fail = true
+        }
+
+        if (passValue.length === 0) {
+            passwordInput.placeholder = 'Lozinka ne smije biti prazna!'
+            fail = true
+        }
+        if (!fail && await nameExistsInDb(nameValue)) {
+            const errorEl = document.createElement('p')
+            errorEl.classList.add('error-msg')
+            errorEl.setAttribute('id', 'error-msg')
+            errorEl.innerText = 'Ime već postoji u bazi!'
+            innerContainerEl.appendChild(errorEl)
+            fail = true
+        }
+
+        if (fail) {
+            return
+        }
+        gameState.player_name = nameValue
+        writeToUserDb({ name: nameValue, password: passValue })
+        outerContainerEl.remove()
+        closeGreeter()
+    })
+}
+
+const nameExistsInDb = async (name: string): Promise<boolean> => {
+    const dbData = await queryDb('/api/queryusers')
+    for (let record of dbData) {
+        if (record['name'] === name)
+            return true
+    }
+    return false
+}
+
+const verifyLogin = async (name: string, password: string): Promise<boolean> => {
+    const dbData = await queryDb('/api/queryusers')
+    for (let record of dbData) {
+        if (record['name'] === name && record['password'] === password)
+            return true
+    }
+    return false
 }
 
 /// Izračun vremena od početka igre. U minutama i sekundama.
@@ -681,6 +928,50 @@ export const calculateEndTime = () => {
     const seconds = timeToFinish.getSeconds()
     return ((minutes < 10) ? '0' : '') + minutes + ':' + ((seconds < 10) ? '0' : '') + seconds;
 }
+
+////// Database \\\\\\
+
+/// Upit baze. Vraća nam sve upise u tablici.
+export const queryDb = async (apiURI: string) => {
+    const response = await fetch(apiURI, { method: 'GET', headers: { 'Accept': 'application/json' } })
+    if (!response.ok) {
+        throw new Error(`Failed to fetch database rows: ${response.statusText}`)
+    }
+    const rows = await response.json()
+    if (debugEnabled) {
+        console.log(rows)
+    }
+    return rows
+}
+
+/// Piše rezultat u bazu.
+const writeVictoryToDb = async (victor_info: { name: string, time: string }) => {
+    await fetch('/api/writetoleaderboarddb', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            'name': victor_info.name,
+            'time': victor_info.time
+        })
+    })
+}
+
+const writeToUserDb = async (user_info: { name: string, password: string }) => {
+    await fetch('/api/writetouserdb', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            'name': user_info.name,
+            'password': user_info.password
+        })
+    })
+}
+
+
 
 /// Pokažemo igraču tablicu rezultata
 const displayLeaderboard = async () => {
@@ -713,7 +1004,7 @@ const displayLeaderboard = async () => {
         { name: "xyz", time: "zyx"}
     }
     */
-    const dbData = await queryDb()
+    const dbData = await queryDb('/api/queryleaderboarddb')
     const rowNames = Object.keys(dbData[0])
 
     const tableRowNames = document.createElement('tr')
@@ -743,31 +1034,3 @@ const closeLeaderboard = () => {
     leaderboardEl?.remove()
 }
 
-////// Database \\\\\\
-
-/// Upit baze. Vraća nam sve upise u tablici.
-export const queryDb = async () => {
-    const response = await fetch('/api/querydb', { method: 'GET', headers: { 'Accept': 'application/json' } })
-    if (!response.ok) {
-        throw new Error(`Failed to fetch database rows: ${response.statusText}`)
-    }
-    const rows = await response.json()
-    if (debugEnabled) {
-        console.log(rows)
-    }
-    return rows
-}
-
-/// Piše rezultat u bazu.
-const writeVictoryToDb = async (victor_info: { name: string, time: string }) => {
-    await fetch('/api/writetodb', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            'name': victor_info.name,
-            'time': victor_info.time
-        })
-    })
-}

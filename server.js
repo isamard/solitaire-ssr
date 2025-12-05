@@ -3,34 +3,29 @@ import express from 'express'
 import sqlite3 from 'sqlite3'
 import bodyParser from 'body-parser'
 
-// Constants
-const isProduction = process.env.NODE_ENV === 'production'
 const port = process.env.PORT || 5173
 const base = process.env.BASE || '/'
-const dbPath = './sql/leaderboard.db'
-
-// Cached production assets
-const templateHtml = isProduction
-  ? await fs.readFile('./dist/client/index.html', 'utf-8')
-  : ''
 
 // Create http server
 const app = express()
+app.use(bodyParser.json())
+//// FUNKCIJE TABLICE \\\\
+
+const leaderboardDbPath = './sql/leaderboard.db'
+const userDbPath = './sql/users.db'
 
 /// Otvori bazu i napravi tablicu ako ne postoji
-const openDatabase = () => {
-  const db = new sqlite3.Database(dbPath)
+const openLeaderboardDb = () => {
+  const db = new sqlite3.Database(leaderboardDbPath)
   db.serialize(() => {
     db.run('CREATE TABLE IF NOT EXISTS scores (name TEXT, time TEXT)')
   })
   return db
 }
 
-app.use(bodyParser.json())
-
-app.get('/api/querydb', (req, res) => {
+app.get('/api/queryleaderboarddb', (req, res) => {
   try {
-    const db = openDatabase()
+    const db = openLeaderboardDb()
 
     db.all('SELECT * FROM scores', (_err, rows) => {
       res.json(rows)
@@ -38,14 +33,14 @@ app.get('/api/querydb', (req, res) => {
 
     db.close()
   } catch (e) {
-    console.error('Database Error:', e);
+    console.error('Leaderboard database Error:', e);
     res.status(500).json({ error: 'Database Error' });
   }
 });
 
-app.put('/api/writetodb', (req, res) => {
+app.put('/api/writetoleaderboarddb', (req, res) => {
   try {
-    const db = openDatabase()
+    const db = openLeaderboardDb()
 
     const { name, time } = req.body
 
@@ -56,7 +51,51 @@ app.put('/api/writetodb', (req, res) => {
     db.close()
 
   } catch (e) {
-    console.error('Database Error:', e);
+    console.error('Leaderboard database Error:', e);
+    res.status(500).json({ error: 'Database Error' });
+  }
+})
+
+//// FUNKCIJE KORISNIKA \\\\
+
+const openUserDb = () => {
+  const db = new sqlite3.Database(userDbPath)
+  db.serialize(() => {
+    db.run('CREATE TABLE IF NOT EXISTS users (name TEXT, password TEXT)')
+  })
+  return db
+}
+
+app.get('/api/queryusers', (req, res) => {
+  try {
+    const db = openUserDb()
+
+    db.all('SELECT * FROM users', (_err, rows) => {
+      res.json(rows)
+    })
+
+    db.close()
+  } catch (e) {
+    console.error('User database Error:', e);
+    res.status(500).json({ error: 'Database Error' });
+  }
+});
+
+app.put('/api/writetouserdb', (req, res) => {
+  try {
+    const db = openUserDb()
+
+    const { name, password } = req.body
+
+    console.log(`Wrote: ${name}, ${password}`)
+    db.serialize(() => {
+      db.run("INSERT INTO users VALUES(?, ?)", name, password)
+    })
+
+    db.close()
+
+  } catch (e) {
+    console.error('User database Error:', e);
     res.status(500).json({ error: 'Database Error' });
   }
 })
@@ -64,20 +103,14 @@ app.put('/api/writetodb', (req, res) => {
 // Add Vite or respective production middlewares
 /** @type {import('vite').ViteDevServer | undefined} */
 let vite
-if (!isProduction) {
-  const { createServer } = await import('vite')
-  vite = await createServer({
-    server: { middlewareMode: true },
-    appType: 'custom',
-    base,
-  })
-  app.use(vite.middlewares)
-} else {
-  const compression = (await import('compression')).default
-  const sirv = (await import('sirv')).default
-  app.use(compression())
-  app.use(base, sirv('./dist/client', { extensions: [] }))
-}
+const { createServer } = await import('vite')
+vite = await createServer({
+  server: { middlewareMode: true },
+  appType: 'custom',
+  base,
+})
+app.use(vite.middlewares)
+
 
 // Serve HTML
 app.use('/', async (req, res) => {
@@ -88,15 +121,10 @@ app.use('/', async (req, res) => {
     let template
     /** @type {import('./src/entry-server.ts').render} */
     let render
-    if (!isProduction) {
-      // Always read fresh template in development
-      template = await fs.readFile('./index.html', 'utf-8')
-      template = await vite.transformIndexHtml(url, template)
-      render = (await vite.ssrLoadModule('/src/entry-server.ts')).render
-    } else {
-      template = templateHtml
-      render = (await import('./dist/server/entry-server.js')).render
-    }
+    // Always read fresh template in development
+    template = await fs.readFile('./index.html', 'utf-8')
+    template = await vite.transformIndexHtml(url, template)
+    render = (await vite.ssrLoadModule('/src/entry-server.ts')).render
 
     const rendered = await render(url)
 

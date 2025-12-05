@@ -15,6 +15,10 @@ body {
   flex-direction: column;
 }
 
+#app {
+  height: 100%;
+}
+
 .actions {
   padding: 0.25% 0.25%;
   font-size: 11px;
@@ -24,6 +28,36 @@ body {
 
 .solitaire {
   position: relative;
+  height: 100%;
+}
+
+.currentplayer {
+  position: relative;
+  left: 74.5%;
+  width: 25%;
+  top: 12%;
+  background-color: rgb(198, 222, 207);
+  border: 2px solid darkolivegreen;
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  >p {
+    position: relative;
+    margin: 0px 0px;
+    font-size: 24px;
+    font-weight: bold;
+  }
+
+  >a {
+    color: blue;
+    font-style: italic;
+    text-decoration: underline;
+    font-size: 24px;
+    margin-left: 10px;
+    margin-top: 0px;
+    cursor: pointer;
+  }
 }
 
 $card-w: 225px;
@@ -177,7 +211,19 @@ $card-h: 315px;
   border: 5px solid red;
 }
 
-.victory-container-outer {
+.score {
+  position: relative;
+  color: black;
+  font-size: 30px;
+  font-weight: bold;
+  background-color: white;
+  border: 2px solid black;
+  display: inline;
+  top: 15%;
+  left: 1%;
+}
+
+.greeter-outer {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -188,19 +234,128 @@ $card-h: 315px;
   background-image: linear-gradient(darkblue, lightblue, darkblue)
 }
 
-.victory-container-inner {
+.greeter-inner {
   position: relative;
   width: 100%;
   height: 100%;
+
+  >button {
+    position: relative;
+    height: 100px;
+    width: 150px;
+    top: 70%;
+    left: 30%;
+    margin-right: 50px;
+    font-size: 24px;
+    background-color: lawngreen;
+    border: 2px solid black;
+    transition-duration: 0.5s;
+    cursor: pointer;
+  }
+
+  >button:hover {
+    background-color: darkgreen;
+    color: white;
+  }
 }
 
-.victory-text {
+.greeter-welcome {
   position: absolute;
   top: 25%;
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
   font-size: 100px;
+}
+
+.register-inner {
+  @extend .login-inner;
+
+  >regtext {
+    text-align: center;
+    @extend .greeter-welcome;
+    top: 10%;
+  }
+
+}
+
+.register-outer {
+  @extend .login-outer;
+}
+
+.login-outer {
+  @extend .greeter-outer;
+}
+
+.login-inner {
+  @extend .greeter-inner;
+  text-align: center;
+
+  >a {
+    position: relative;
+    left: 47.5%;
+    top: 2px;
+    font-size: 30px;
+    color: red;
+    background-color: white;
+    border: 5px solid black;
+    padding: 1px 1px 1px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  >.error-msg {
+    position: relative;
+    font-size: 24px;
+    color: #c00;
+    background-color: #ffebe9;
+    border: 1px solid #ffddd9;
+    border-radius: 4px;
+    top: 60%;
+  }
+
+  >p {
+    @extend .greeter-welcome;
+    top: 10%;
+  }
+
+  >form {
+    position: relative;
+    top: 50%;
+
+    >input {
+      height: 28px;
+      width: 50%;
+      font-size: 16px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    >button {
+      height: 28px;
+      width: 50%;
+      cursor: pointer;
+    }
+  }
+}
+
+.victory-subtext {
+  position: relative;
+  top: 15%;
+  text-align: center;
+  font-size: 30px;
+}
+
+.victory-container-outer {
+  @extend .greeter-outer;
+}
+
+.victory-container-inner {
+  @extend .greeter-inner;
+}
+
+.victory-text {
+  @extend .greeter-welcome;
 }
 
 .victory-subtext {
@@ -217,22 +372,6 @@ $card-h: 315px;
   font-size: 30px;
 }
 
-.victory-container-inner>form {
-  position: relative;
-  top: 70%;
-  left: 37.5%;
-  font-size: 30px;
-}
-
-.victory-container-inner>.thank-you-text {
-  position: relative;
-  top: 52%;
-  left: 34%;
-  font-size: 28px;
-  color: white;
-  width: 288px;
-  background-color: black;
-}
 
 .leaderboard-container-outer {
   position: absolute;

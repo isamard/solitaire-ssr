@@ -39,14 +39,16 @@ export interface GameState {
         // Hrpa sa kartama
         pile: DeckPile
         // Izdavajuča hrpa
-        deal: DeckDeal
+        deal: DeckPile
     }
     // Finish hrpa
-    finish: FinishDeck[]
+    finish: DeckPile[]
     // Hrpa na stolu
-    desk: DeskDeck[]
+    desk: DeckPile[]
     // Trentune moguća odredišta za karte
     destinations: Destination[]
+    // Ime trenutnog igrača
+    player_name: string
 }
 
 /// Hrpa karata
@@ -57,10 +59,6 @@ export interface DeckPile {
     cards: number[]
 }
 
-export interface DeckDeal extends DeckPile { }
-export interface FinishDeck extends DeckPile { }
-export interface DeskDeck extends DeckPile { }
-
 export interface Destination {
     // Element mogućeg odredišta
     el: HTMLElement | null
@@ -69,24 +67,3 @@ export interface Destination {
     // Indeks karte koja se kreće
     cardIndex: number
 }
-
-
-/*
-//todo
-export interface MovingState {
-    card: Card | {} // Consider defining a more specific type or interface.
-    element: HTMLElement | null
-    index: number
-    capture: boolean
-    container: {
-        cards: number[]
-    }
-    target: any // Define more specifically if possible.
-    origin: any // Define more specifically if possible.
-    offset: {
-        x: number
-        y: number
-    }
-    destinations: any[] // Define more specifically if possible.
-}
-*/
