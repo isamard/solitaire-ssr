@@ -1,4 +1,5 @@
-import { gameState, calculateEndTime, queryDb, displayFinish } from "./entry-client"
+import { gameState, calculateEndTime, displayFinish } from "./game.ts"
+import { queryDb } from "./database.ts"
 
 /// U ovoj datoteci se nalaze gumbovi i funkcije koje sam koristio za debug
 
@@ -44,7 +45,7 @@ export const populateDebugElems = () => {
     queryDbEl.innerText = 'Query DB'
     queryDbEl.addEventListener('click', (event) => {
         event.preventDefault()
-        queryDb()
+        queryDb('/api/leaderboard')
     })
     actionsDiv?.appendChild(queryDbEl)
 }

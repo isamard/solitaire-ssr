@@ -1,8 +1,8 @@
 export function render(_url: string) {
   const html = `
     <div class="actions" id="actions">
-      <button type="button" id="reset-game" class="new-game">Nova igra</button>
-      <button type="button" id="leaderboard" class="leaderboard">Pregled tablice</button>
+      <a class="noselect" id="reset-game">Nova igra</a>
+      <a class="noselect" href="/leaderboard">Pregled tablice</a>
     </div>
     <div class="solitaire" id="solitaire">
       <div id="top" class="top">

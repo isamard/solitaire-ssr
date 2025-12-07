@@ -1,6 +1,8 @@
-import './style.scss'
-import type { Card, CardLocation, GameState } from "./types";
-import * as debug from './debug';
+import type { Card, CardLocation, GameState } from "../types/index";
+import * as debug from './debug.ts';
+import * as database from './database.ts'
+import { showGreeter } from './greeter.ts';
+import { createContainerElems, generateFancyHoursMinutes, generateFancyDate, calcTimeDiff } from "./helpers.ts"
 
 // Elementi igre
 const dealPileEl = document.getElementById('deck-pile') as HTMLElement
@@ -11,15 +13,19 @@ const spriteImg = document.getElementById('cards-png') as HTMLImageElement
 
 // Kontrolni gumbovi
 const resetEl = document.getElementById('reset-game') as HTMLElement
-const leaderboardEl = document.getElementById('leaderboard') as HTMLElement
 
 /// Ova varijabla kontrolira debug elemente
-const debugEnabled = true
+export const debugEnabled = false
 
 //// Postavljanje igre \\\\
 
 /// Funkcija koja postavlja igru, pozvana kad se stranica učita
-const initializeGame = () => {
+const initializeGame = async () => {
+
+    const savedNameQuery = await fetch('/api/currentplayer', { method: 'GET', headers: { 'Accept': 'text/plain' } })
+    const savedName = await savedNameQuery.text()
+    console.log(`curr playername: ${savedName}, ${gameState.player_name}`)
+    gameState.player_name = String(savedName)
     const css = document.createElement('style')
     const styles = `.card--front { background-image: url("${spriteImg.src}"); }`
     css.appendChild(document.createTextNode(styles))
@@ -63,25 +69,58 @@ const initializeGame = () => {
     }
 
     resetEl.onclick = resetCards
-    leaderboardEl.onclick = displayLeaderboard
     if (debugEnabled) {
         debug.populateDebugElems()
     }
     resetCards()
-    showGreeter()
+    console.log(`initgame, playername: ${savedName}, ${gameState.player_name}`)
+    if (gameState.player_name === '/') {
+        showGreeter()
+    } else {
+        updateCurrentPlayer()
+    }
 }
 
-document.addEventListener('DOMContentLoaded', initializeGame)
+const onUnload = (_event: Event) => {
+    fetch('/api/updatecurrentplayer', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'text/plain',
+        },
+        body: `${gameState.player_name}`
+    })
+    if (gameState.player_name !== '/') {
+        if (!endTime) {
+            endTime = new Date()
+        }
+        database.writeResultToDb(gameState.player_name, generateFancyHoursMinutes(startTime), generateFancyHoursMinutes(endTime), calcTimeDiff(startTime, endTime), generateFancyDate(endTime), calculateScore())
+    }
+}
+
+if (document.location.pathname === '/home') {
+    document.addEventListener('DOMContentLoaded', initializeGame)
+    window.onpagehide = onUnload
+}
+
+const onTryExit = (event: Event) => {
+    event.preventDefault()
+}
+
+export const setStartTime = () => {
+    startTime = new Date()
+    window.addEventListener('beforeunload', onTryExit)
+}
 
 // Vrijeme početka, milisekunde on 01.01.1970.
-let startTime: number
+let startTime: Date
 
 /// Postavljanje karti na hrpe
-const resetCards = () => {
+export const resetCards = () => {
+    if (document.getElementById("greeter-outer"))
+        return
+
     const victoryElement = document.getElementById('victory-container-outer')
     victoryElement?.remove()
-
-    startTime = new Date().getTime()
 
     // clear decks
     for (let i = 0; i < 7; i++) {
@@ -170,7 +209,7 @@ export const gameState: GameState = {
     /// Sadrži Destination objekte
     destinations: [],
     /// Ime trentunog igrača
-    player_name: '/'
+    player_name: "/"
 }
 
 
@@ -619,33 +658,13 @@ const checkFinish = () => {
     displayFinish()
 }
 
-// Kalkulacija bodova, 1 karta na finish-u = 1 bod
-const calculateScore = () => {
-    let score = 0
-    for (let finishDeckIndex = 0; finishDeckIndex <= gameState.finish.length - 1; finishDeckIndex++) {
-        score += gameState.finish[finishDeckIndex].cards.length
-    }
-
-    const scoreEl = document.getElementById('score')
-    if (scoreEl) {
-        scoreEl.innerText = `Bodovi: ${score}`
-    }
-    return score
-}
-
 /// Pokazujemo igraču završetak
 export const displayFinish = () => {
     if (document.getElementById('victory-container-outer')) {
         return
     }
-    const outerContainerEl = document.createElement('div')
-    outerContainerEl.classList.add('victory-container-outer')
-    outerContainerEl.setAttribute("id", "victory-container-outer")
-    document.body.appendChild(outerContainerEl)
 
-    const innerContainerEl = document.createElement('div')
-    innerContainerEl.classList.add('victory-container-inner')
-    outerContainerEl.appendChild(innerContainerEl)
+    const { outerContainerEl: _, innerContainerEl } = createContainerElems('victory-container')
 
     const victoryText = document.createElement('p')
     victoryText.classList.add('victory-text')
@@ -654,68 +673,27 @@ export const displayFinish = () => {
 
     const victorySubText = document.createElement('p')
     victorySubText.classList.add('victory-subtext')
-    const finishTime = calculateEndTime()
-    victorySubText.innerText = `Vaše vrijeme:\n ${finishTime}`
+    const endtimestring = calculateEndTime()
+    victorySubText.innerText = `Vaše vrijeme:\n ${endtimestring}`
     victoryText.appendChild(victorySubText)
+
+    window.removeEventListener('beforeunload', onTryExit)
 }
 
-const createContainerElems = (classBaseName: string): { outerContainerEl: HTMLElement, innerContainerEl: HTMLElement } => {
-    let outerContainerEl = document.getElementById(`${classBaseName}-outer`)
-    if (!outerContainerEl) {
-        outerContainerEl = document.createElement('div')
-        outerContainerEl.classList.add(`${classBaseName}-outer`)
-        outerContainerEl.setAttribute("id", `${classBaseName}-outer`)
-        document.body.appendChild(outerContainerEl)
-    }
 
-    let innerContainerEl = document.getElementById(`${classBaseName}-inner`)
-    if (!innerContainerEl) {
-        innerContainerEl = document.createElement('div')
-        innerContainerEl.classList.add(`${classBaseName}-inner`)
-        innerContainerEl.setAttribute("id", `${classBaseName}-inner`)
-        document.body.appendChild(innerContainerEl)
-    }
-    outerContainerEl.appendChild(innerContainerEl)
-
-    return { outerContainerEl, innerContainerEl }
+let endTime: Date
+/// Izračun vremena od početka igre. U minutama i sekundama.
+export const calculateEndTime = () => {
+    // Vrijeme kraja, milisekunde on 01.01.1970.
+    endTime = new Date()
+    const timeToFinish = new Date(endTime.getTime() - startTime.getTime())
+    const minutes = timeToFinish.getMinutes()
+    const seconds = timeToFinish.getSeconds()
+    return ((minutes < 10) ? '0' : '') + minutes + ':' + ((seconds < 10) ? '0' : '') + seconds
 }
 
-const showGreeter = () => {
-    const { outerContainerEl: _, innerContainerEl } = createContainerElems('greeter')
 
-    gameState.player_name = '/'
-    updateCurrentPlayer()
-
-    const greetText = document.createElement('p')
-    greetText.classList.add('greeter-welcome')
-    greetText.innerText = 'Dobrodošli!'
-    innerContainerEl.appendChild(greetText)
-
-    const loginButton = document.createElement('button')
-    loginButton.innerText = 'Prijava'
-
-    loginButton.addEventListener('click', showLogin)
-    innerContainerEl.appendChild(loginButton)
-
-    const registerButton = document.createElement('button')
-    registerButton.innerText = 'Registracija'
-
-    registerButton.addEventListener('click', showRegister)
-    innerContainerEl.appendChild(registerButton)
-
-}
-
-const closeGreeter = () => {
-    const loginButton = document.getElementById('button')
-    loginButton?.removeEventListener('click', showLogin)
-    const registerButton = document.getElementById('button')
-    registerButton?.removeEventListener('click', showRegister)
-
-    document.getElementById('greeter-outer')?.remove()
-    updateCurrentPlayer()
-}
-
-const updateCurrentPlayer = () => {
+export const updateCurrentPlayer = () => {
     const currentplayerdiv = document.getElementById('currentplayer')
     const currentplayertext = document.getElementById('currentplayertext')
     const logoutLink = document.getElementById('logout')
@@ -737,300 +715,29 @@ const updateCurrentPlayer = () => {
     }
 
     if (logoutLink) {
-        logoutLink.onclick = showGreeter
+        logoutLink.onclick = () => {
+            window.removeEventListener('beforeunload', onTryExit)
+            resetCards()
+            logOut()
+        }
     }
 }
 
-const showLogin = () => {
-    const { outerContainerEl, innerContainerEl } = createContainerElems('login')
+const logOut = () => {
+    gameState.player_name = '/'
+    showGreeter()
+}
 
-    const closeButton = document.createElement('a')
-    closeButton.innerText = `✖`
-    innerContainerEl.appendChild(closeButton)
-    const removeOuterContainer = () => {
-        outerContainerEl.remove()
-    }
-    closeButton.onclick = removeOuterContainer
-
-    const prijavaText = document.createElement('p')
-    prijavaText.innerText = 'Prijava'
-    innerContainerEl.appendChild(prijavaText)
-
-    const loginForm = document.createElement('form')
-    const nameInput = document.createElement('input')
-    nameInput.type = 'text'
-    nameInput.name = 'nameInput'
-    nameInput.placeholder = 'Vaše ime ovdje...'
-
-    const passwordInput = document.createElement('input')
-    passwordInput.type = 'password'
-    passwordInput.name = 'passInput'
-    passwordInput.placeholder = 'Lozinka...'
-
-    const submitNameButton = document.createElement('button')
-    submitNameButton.type = 'submit'
-    submitNameButton.innerText = 'Prijava'
-
-    loginForm.appendChild(nameInput)
-    loginForm.appendChild(passwordInput)
-    loginForm.appendChild(submitNameButton)
-    innerContainerEl.appendChild(loginForm)
-
-    const loginClick = async (event: Event) => {
-        event.preventDefault()
-        document.getElementById('error-msg')?.remove()
-        let fail = false
-        const nameValue = nameInput.value.trim()
-        if (nameValue.length === 0) {
-            nameInput.placeholder = 'Ime ne smije biti prazno!'
-            fail = true
-        }
-
-        const passValue = passwordInput.value.trim()
-
-        if (passValue.length < 5) {
-            passwordInput.placeholder = 'Lozinka prekratka!'
-            fail = true
-        }
-
-        if (passValue.length === 0) {
-            passwordInput.placeholder = 'Lozinka ne smije biti prazna!'
-            fail = true
-        }
-
-        if (fail) {
-            return
-        }
-
-        if (await verifyLogin(nameValue, passValue)) {
-            outerContainerEl.remove()
-            loginForm.removeEventListener('click', loginClick)
-            gameState.player_name = nameValue
-            closeGreeter()
-            return
-        }
-
-        const errorEl = document.createElement('p')
-        errorEl.classList.add('error-msg')
-        errorEl.setAttribute('id', 'error-msg')
-        errorEl.innerText = 'Netočno ime ili lozinka!'
-        innerContainerEl.appendChild(errorEl)
+// Kalkulacija bodova, 1 karta na finish-u = 1 bod
+const calculateScore = () => {
+    let score = 0
+    for (let finishDeckIndex = 0; finishDeckIndex <= gameState.finish.length - 1; finishDeckIndex++) {
+        score += gameState.finish[finishDeckIndex].cards.length
     }
 
-    loginForm.addEventListener('submit', loginClick)
-
-}
-
-const showRegister = async () => {
-    const { outerContainerEl, innerContainerEl } = createContainerElems('register')
-
-    const closeButton = document.createElement('a')
-    closeButton.innerText = `✖`
-    innerContainerEl.appendChild(closeButton)
-    const removeOuterContainer = () => {
-        outerContainerEl.remove()
+    const scoreEl = document.getElementById('score')
+    if (scoreEl) {
+        scoreEl.innerText = `Bodovi: ${score}`
     }
-    closeButton.onclick = removeOuterContainer
-
-    const RegistracijaText = document.createElement('p')
-    RegistracijaText.innerText = 'Registracija'
-    RegistracijaText.classList.add('regtext')
-    innerContainerEl.appendChild(RegistracijaText)
-
-    const registerForm = document.createElement('form')
-    const nameInput = document.createElement('input')
-    nameInput.type = 'text'
-    nameInput.name = 'nameInput'
-    nameInput.placeholder = 'Vaše ime ovdje...'
-
-    const passwordInput = document.createElement('input')
-    passwordInput.type = 'password'
-    passwordInput.name = 'passInput'
-    passwordInput.placeholder = 'Lozinka...'
-
-    const submitNameButton = document.createElement('button')
-    submitNameButton.type = 'submit'
-    submitNameButton.innerText = 'Registriraj'
-
-    registerForm.appendChild(nameInput)
-    registerForm.appendChild(passwordInput)
-    registerForm.appendChild(submitNameButton)
-    innerContainerEl.appendChild(registerForm)
-
-    registerForm.addEventListener('submit', async (event) => {
-        event.preventDefault()
-        document.getElementById('error-msg')?.remove()
-        let fail = false
-        const nameValue = nameInput.value.trim()
-        if (nameValue.length === 0) {
-            nameInput.placeholder = 'Ime ne smije biti prazno!'
-            fail = true
-        }
-
-        const passValue = passwordInput.value.trim()
-
-        if (passValue.length < 5) {
-            const errorEl = document.createElement('p')
-            errorEl.classList.add('error-msg')
-            errorEl.setAttribute('id', 'error-msg')
-            errorEl.innerText = 'Lozinka mora biti duža od 5 znakova!'
-            innerContainerEl.appendChild(errorEl)
-            fail = true
-        }
-
-        if (passValue.length === 0) {
-            passwordInput.placeholder = 'Lozinka ne smije biti prazna!'
-            fail = true
-        }
-        if (!fail && await nameExistsInDb(nameValue)) {
-            const errorEl = document.createElement('p')
-            errorEl.classList.add('error-msg')
-            errorEl.setAttribute('id', 'error-msg')
-            errorEl.innerText = 'Ime već postoji u bazi!'
-            innerContainerEl.appendChild(errorEl)
-            fail = true
-        }
-
-        if (fail) {
-            return
-        }
-        gameState.player_name = nameValue
-        writeToUserDb({ name: nameValue, password: passValue })
-        outerContainerEl.remove()
-        closeGreeter()
-    })
+    return score
 }
-
-const nameExistsInDb = async (name: string): Promise<boolean> => {
-    const dbData = await queryDb('/api/queryusers')
-    for (let record of dbData) {
-        if (record['name'] === name)
-            return true
-    }
-    return false
-}
-
-const verifyLogin = async (name: string, password: string): Promise<boolean> => {
-    const dbData = await queryDb('/api/queryusers')
-    for (let record of dbData) {
-        if (record['name'] === name && record['password'] === password)
-            return true
-    }
-    return false
-}
-
-/// Izračun vremena od početka igre. U minutama i sekundama.
-export const calculateEndTime = () => {
-    // Vrijeme kraja, milisekunde on 01.01.1970.
-    const endTime = new Date().getTime()
-    const timeToFinish = new Date(endTime - startTime)
-    const minutes = timeToFinish.getMinutes()
-    const seconds = timeToFinish.getSeconds()
-    return ((minutes < 10) ? '0' : '') + minutes + ':' + ((seconds < 10) ? '0' : '') + seconds;
-}
-
-////// Database \\\\\\
-
-/// Upit baze. Vraća nam sve upise u tablici.
-export const queryDb = async (apiURI: string) => {
-    const response = await fetch(apiURI, { method: 'GET', headers: { 'Accept': 'application/json' } })
-    if (!response.ok) {
-        throw new Error(`Failed to fetch database rows: ${response.statusText}`)
-    }
-    const rows = await response.json()
-    if (debugEnabled) {
-        console.log(rows)
-    }
-    return rows
-}
-
-/// Piše rezultat u bazu.
-const writeVictoryToDb = async (victor_info: { name: string, time: string }) => {
-    await fetch('/api/writetoleaderboarddb', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            'name': victor_info.name,
-            'time': victor_info.time
-        })
-    })
-}
-
-const writeToUserDb = async (user_info: { name: string, password: string }) => {
-    await fetch('/api/writetouserdb', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            'name': user_info.name,
-            'password': user_info.password
-        })
-    })
-}
-
-
-
-/// Pokažemo igraču tablicu rezultata
-const displayLeaderboard = async () => {
-    if (document.getElementById('leaderboard-container-outer')) {
-        closeLeaderboard()
-        return
-    }
-    const outerContainerEl = document.createElement('div')
-    outerContainerEl.classList.add('leaderboard-container-outer')
-    outerContainerEl.setAttribute("id", "leaderboard-container-outer")
-    document.body.appendChild(outerContainerEl)
-
-    const innerContainerEl = document.createElement('div')
-    innerContainerEl.classList.add('leaderboard-container-inner')
-    outerContainerEl.appendChild(innerContainerEl)
-
-    const closeButton = document.createElement('button')
-    closeButton.innerText = 'Zatvori'
-    closeButton.onclick = closeLeaderboard
-
-    innerContainerEl.appendChild(closeButton)
-
-    const table = document.createElement('table')
-    table.classList.add('leaderboard-table')
-
-    /*
-    {
-        { name: "xyz", time: "zyx"},
-        { name: "xyz", time: "zyx"},
-        { name: "xyz", time: "zyx"}
-    }
-    */
-    const dbData = await queryDb('/api/queryleaderboarddb')
-    const rowNames = Object.keys(dbData[0])
-
-    const tableRowNames = document.createElement('tr')
-    rowNames.forEach((rowname) => {
-        const thEl = document.createElement('th')
-        thEl.textContent = rowname.charAt(0).toUpperCase() + rowname.slice(1)
-        thEl.classList.add('table-row-names')
-        tableRowNames.appendChild(thEl)
-    })
-    table.appendChild(tableRowNames)
-
-    dbData.forEach((entry: any) => {
-        const rowEl = document.createElement("tr")
-        rowNames.forEach((rowName => {
-            const tdEl = document.createElement("td")
-            tdEl.textContent = entry[rowName]
-            rowEl.appendChild(tdEl)
-        }))
-        table.appendChild(rowEl)
-    });
-
-    innerContainerEl.appendChild(table);
-}
-
-const closeLeaderboard = () => {
-    const leaderboardEl = document.getElementById('leaderboard-container-outer')
-    leaderboardEl?.remove()
-}
-

@@ -1,0 +1,135 @@
+html,
+body {
+    position: relative;
+    margin: 0px;
+    padding: 0px;
+    background-color: lightblue;
+    height: 100%;
+}
+
+#app {
+    height: 100%;
+}
+
+.actions {
+    font-size: 11px;
+    border: 5px solid darkcyan;
+    height: 4%;
+    position: relative;
+
+    >a {
+        position: relative;
+        top: 25%;
+        margin-left: 5px;
+        padding: 1px 6px;
+        border: 1px outset buttonborder;
+        font-size: 16px;
+        border-radius: 3px;
+        color: buttontext;
+        background-color: buttonface;
+        text-decoration: none;
+    }
+
+    >a:hover {
+        cursor: pointer;
+    }
+}
+
+.leaderboard {
+    position: relative;
+    height: 93%;
+}
+
+.leaderboard>table {
+    position: relative;
+    left: 5%;
+    top: 1%;
+    border: 1px solid gray;
+    display: block;
+    height: 100%;
+    width: 90%;
+    overflow-y: scroll;
+
+    .table-row-names {
+        background-color: lightblue;
+        font-size: 50px;
+        padding-left: 20px;
+        padding-right: 20px;
+        border: 1px solid black;
+        position: sticky;
+        top: 0;
+    }
+
+    >tr,
+    td {
+        border: 1px solid black;
+        background-color: lightblue;
+        text-align: center;
+    }
+}
+
+.statistics-outer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 900px;
+    height: 500px;
+    border: 5px solid black;
+    background-image: linear-gradient(darkblue, lightblue, darkblue)
+}
+
+.statistics-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    >.title {
+        text-align: center;
+        color: white;
+        font-size: 50px;
+        text-decoration: underline;
+    }
+
+    >a {
+        position: relative;
+        left: 95%;
+        top: 2px;
+        font-size: 30px;
+        color: red;
+        background-color: white;
+        border: 5px solid black;
+        padding: 1px 1px 1px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    >p {
+        font-size: 24px;
+    }
+}
+
+.statsdiv {
+    position: relative;
+    margin-left: 15%;
+    text-align: center;
+    bottom: 10%;
+    display: grid;
+
+    >.subheader {
+        display: inline-block;
+        margin-right: 20%;
+        margin-bottom: 0px;
+        margin-top: 5px;
+        font-size: 24px;
+        background-color: lightblue;
+        border: 2px solid black;
+        padding: 5px;
+
+        >p {
+            font-size: 16px;
+            border: 2px dotted gray;
+            padding: 2px;
+        }
+    }
+}
