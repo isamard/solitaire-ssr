@@ -36,9 +36,8 @@ const openLeaderboardDb = () => {
 app.get('/api/queryleaderboarddb', (req, res) => {
   try {
     const db = openLeaderboardDb()
-
     db.all('SELECT * FROM scores', (_err, rows) => {
-      res.json(rows)
+      res.status(200).json(rows)
     })
 
     db.close()
@@ -122,13 +121,14 @@ let currentPlayer = '/'
 app.get('/api/currentplayer', (req, res) => {
   //console.log(`Getting ${currentPlayer}`)
   res.type('txt')
-  res.send(currentPlayer)
+  res.status(200).send(currentPlayer)
 })
 
 /// Ažuriraj trenutnog igrača
 app.put('/api/updatecurrentplayer', (req, res) => {
   currentPlayer = req.body
-  //console.log(`Putting ${currentPlayer}`)
+  res.status(200).json({status:"ok"})
+  //console.log(`Putting ${currentPlayer}`) 
 })
 
 // Add Vite or respective production middlewares

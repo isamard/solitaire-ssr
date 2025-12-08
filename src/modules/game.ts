@@ -25,7 +25,8 @@ const initializeGame = async () => {
     const savedNameQuery = await fetch('/api/currentplayer', { method: 'GET', headers: { 'Accept': 'text/plain' } })
     const savedName = await savedNameQuery.text()
     console.log(`curr playername: ${savedName}, ${gameState.player_name}`)
-    gameState.player_name = String(savedName)
+    gameState.player_name = savedName
+    putPlayerName(savedName)
     const css = document.createElement('style')
     const styles = `.card--front { background-image: url("${spriteImg.src}"); }`
     css.appendChild(document.createTextNode(styles))
@@ -81,32 +82,30 @@ const initializeGame = async () => {
     }
 }
 
-/// Kad se stranica zatvori, šaljemo API request koji ažurira trenutnog igrača. 
-const onUnload = (_event: Event) => {
-    fetch('/api/updatecurrentplayer', {
+if (document.location.pathname === '/home') {
+    document.addEventListener('DOMContentLoaded', initializeGame)
+}
+
+/// Kad korisnik pokuša zatvoriti stranicu, pitamo da li su sigurni
+const onTryExit = (_event: Event) => {
+    writeGame()
+}
+
+/// Postavljamo početno vrijeme i počinjemo slušati za pokušaj izlazak iz igre
+export const setStartTime = async () => {
+    startTime = new Date()
+    window.addEventListener('beforeunload', onTryExit)
+}
+
+
+export const putPlayerName = async (name: string) => {
+    await fetch('/api/updatecurrentplayer', {
         method: 'PUT',
         headers: {
             'Content-Type': 'text/plain',
         },
-        body: `${gameState.player_name}`
+        body: `${name}`
     })
-    writeGame()
-}
-
-if (document.location.pathname === '/home') {
-    document.addEventListener('DOMContentLoaded', initializeGame)
-    window.onpagehide = onUnload
-}
-
-/// Kad korisnik pokuša zatvoriti stranicu, pitamo da li su sigurni
-const onTryExit = (event: Event) => {
-    event.preventDefault()
-}
-
-/// Postavljamo početno vrijeme i počinjemo slušati za pokušaj izlazak iz igre
-export const setStartTime = () => {
-    startTime = new Date()
-    window.addEventListener('beforeunload', onTryExit)
 }
 
 /// Zapisuje rezultat u bazu
@@ -129,10 +128,6 @@ export const resetCards = () => {
 
     const victoryElement = document.getElementById('victory-container-outer')
     victoryElement?.remove()
-
-    if (calculateScore() > 0) {
-        writeGame()
-    }
 
     // clear decks
     for (let i = 0; i < 7; i++) {
@@ -194,6 +189,7 @@ export const resetCards = () => {
     if (debugEnabled) {
         console.log(`------- New Game -------`)
     }
+    setStartTime()
 }
 
 /// Objekt koji sadrži informacije o cijeloj igri. Prati sve karte u igri i gdje se one nalaze
@@ -688,8 +684,6 @@ export const displayFinish = () => {
     const endtimestring = calculateEndTime()
     victorySubText.innerText = `Vaše vrijeme:\n ${endtimestring}`
     victoryText.appendChild(victorySubText)
-
-    window.removeEventListener('beforeunload', onTryExit)
 }
 
 
@@ -709,13 +703,8 @@ export const updateCurrentPlayer = () => {
     const currentplayerdiv = document.getElementById('currentplayer')
     const currentplayertext = document.getElementById('currentplayertext')
     const logoutLink = document.getElementById('logout')
-    if (gameState.player_name === '/') {
-        if (currentplayerdiv) {
-            currentplayerdiv.style.display = "none"
-        }
-        if (currentplayertext) {
-            currentplayertext.innerText = `Trenutni igrač: /`
-        }
+    if (gameState.player_name === '/' && currentplayerdiv) {
+        currentplayerdiv.style.display = "none"
         return
     }
 
@@ -738,6 +727,7 @@ export const updateCurrentPlayer = () => {
 /// Odjavljujemo igrača i pokazujemo login
 const logOut = () => {
     gameState.player_name = '/'
+    putPlayerName('/')
     showGreeter()
 }
 

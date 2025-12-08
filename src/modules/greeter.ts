@@ -1,5 +1,5 @@
 
-import { gameState, updateCurrentPlayer, setStartTime } from "./game.ts"
+import { gameState, updateCurrentPlayer, setStartTime, putPlayerName } from "./game.ts"
 import * as database from "./database.ts"
 import { createContainerElems } from "./helpers.ts"
 
@@ -37,6 +37,7 @@ const succeedLogin = () => {
 
     document.getElementById('greeter-outer')?.remove()
     updateCurrentPlayer()
+    console.log(`succeedlogin playername ${gameState.player_name}`)
     setStartTime()
 }
 
@@ -132,6 +133,7 @@ const showLogin = () => {
             outerContainerEl.remove()
             loginForm.removeEventListener('click', loginClick)
             gameState.player_name = nameValue
+            putPlayerName(nameValue)
             window.removeEventListener('beforeunload', onInput)
             succeedLogin()
             return
@@ -219,7 +221,8 @@ const showRegister = async () => {
             passwordInput.placeholder = 'Lozinka ne smije biti prazna!'
             fail = true
         }
-        if (!fail && await database.nameExistsInDb(nameValue)) {
+        const nameExists = await database.nameExistsInDb(nameValue)
+        if (nameExists) {
             createErrorMsg('Ime već postoji u bazi!', innerContainerEl)
             fail = true
         }
@@ -228,6 +231,7 @@ const showRegister = async () => {
             return
         }
         gameState.player_name = nameValue
+        putPlayerName(nameValue)
         database.writeToUserDb(nameValue, passValue)
         outerContainerEl.remove()
         window.removeEventListener('beforeunload', onInput)
