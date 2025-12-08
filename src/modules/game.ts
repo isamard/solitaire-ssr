@@ -69,7 +69,7 @@ const initializeGame = async () => {
         deskContainerEl.appendChild(el)
     }
 
-    resetEl.onclick = resetCards
+    resetEl.onclick = clickReset
     if (debugEnabled) {
         debug.populateDebugElems()
     }
@@ -86,9 +86,11 @@ if (document.location.pathname === '/home') {
     document.addEventListener('DOMContentLoaded', initializeGame)
 }
 
-/// Kad korisnik pokuša zatvoriti stranicu, pitamo da li su sigurni
+/// Kad korisnik pokuša zatvoriti stranicu, provjerimo treba li napraviti zapis
 const onTryExit = (_event: Event) => {
-    writeGame()
+    if (calculateScore() > 0) {
+        writeGame()
+    }
 }
 
 /// Postavljamo početno vrijeme i počinjemo slušati za pokušaj izlazak iz igre
@@ -120,6 +122,15 @@ const writeGame = () => {
 
 // Vrijeme početka, milisekunde on 01.01.1970.
 let startTime: Date
+
+/// Što se dogodi kad klikeno 'Nova igra'
+const clickReset = () => {
+    endTime = new Date()
+    if (calculateScore() > 0) {
+        writeGame()
+    }
+    resetCards()
+}
 
 /// Postavljanje karti na hrpe
 export const resetCards = () => {
@@ -189,6 +200,8 @@ export const resetCards = () => {
     if (debugEnabled) {
         console.log(`------- New Game -------`)
     }
+
+    calculateScore()
     setStartTime()
 }
 
