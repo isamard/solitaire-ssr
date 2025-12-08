@@ -72,6 +72,7 @@ const displayLeaderboard = async () => {
     leaderboardEl?.appendChild(table);
 }
 
+/// Prikazujemo agregirane statistike u igri
 const displayStatistics = async () => {
     const statisticsContainer = document.getElementById('statistics-outer')
 

@@ -32,6 +32,7 @@ const openLeaderboardDb = () => {
   return db
 }
 
+/// Izvrati sve zapise u tablici rezultata
 app.get('/api/queryleaderboarddb', (req, res) => {
   try {
     const db = openLeaderboardDb()
@@ -47,6 +48,7 @@ app.get('/api/queryleaderboarddb', (req, res) => {
   }
 });
 
+/// Populiraj tablicu rezultata
 app.put('/api/writetoleaderboarddb', (req, res) => {
   try {
     const db = openLeaderboardDb()
@@ -66,6 +68,7 @@ app.put('/api/writetoleaderboarddb', (req, res) => {
 
 //// FUNKCIJE KORISNIKA \\\\
 
+/// Napravi tablicu korisnika ako ne postoji
 const openUserDb = () => {
   const db = new sqlite3.Database(userDbPath)
   db.serialize(() => {
@@ -74,6 +77,7 @@ const openUserDb = () => {
   return db
 }
 
+/// Izvrati sve zapise u tablici korisnika
 app.get('/api/queryusers', (req, res) => {
   try {
     const db = openUserDb()
@@ -89,13 +93,14 @@ app.get('/api/queryusers', (req, res) => {
   }
 });
 
+/// Zapiši novog korisnika u bazu
 app.put('/api/writetouserdb', (req, res) => {
   try {
     const db = openUserDb()
 
     const { name, password } = req.body
 
-    console.log(`Wrote: ${name}, ${password}`)
+    //console.log(`Wrote: ${name}, ${password}`)
     db.serialize(() => {
       db.run("INSERT INTO users VALUES(?, ?)", name, password)
     })
@@ -108,17 +113,22 @@ app.put('/api/writetouserdb', (req, res) => {
   }
 })
 
+//// PERSISTENCE \\\\
+
+/// Varijabla koja prati trenutnog igrača između promjena stranica
 let currentPlayer = '/'
 
+/// Izvrati trenutnog igrača
 app.get('/api/currentplayer', (req, res) => {
-  console.log(`Getting ${currentPlayer}`)
+  //console.log(`Getting ${currentPlayer}`)
   res.type('txt')
   res.send(currentPlayer)
 })
 
+/// Ažuriraj trenutnog igrača
 app.put('/api/updatecurrentplayer', (req, res) => {
   currentPlayer = req.body
-  console.log(`Putting ${currentPlayer}`)
+  //console.log(`Putting ${currentPlayer}`)
 })
 
 // Add Vite or respective production middlewares

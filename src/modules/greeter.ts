@@ -3,6 +3,7 @@ import { gameState, updateCurrentPlayer, setStartTime } from "./game.ts"
 import * as database from "./database.ts"
 import { createContainerElems } from "./helpers.ts"
 
+/// Prikazuje početnu stranicu
 export const showGreeter = () => {
     const { outerContainerEl: _, innerContainerEl } = createContainerElems('greeter')
 
@@ -27,6 +28,7 @@ export const showGreeter = () => {
 
 }
 
+/// Pozvano pri uspješnoj prijavi ili registraciji
 const succeedLogin = () => {
     const loginButton = document.getElementById('button')
     loginButton?.removeEventListener('click', showLogin)
@@ -38,6 +40,7 @@ const succeedLogin = () => {
     setStartTime()
 }
 
+/// Helper za jednostavno prikazivanje greški (npr. kriva lozinka)
 const createErrorMsg = (errorstring: string, attachEl: HTMLElement) => {
     const errorEl = document.createElement('p')
     errorEl.classList.add('error-msg')
@@ -46,6 +49,7 @@ const createErrorMsg = (errorstring: string, attachEl: HTMLElement) => {
     attachEl.appendChild(errorEl)
 }
 
+/// Prikazuje prijavu
 const showLogin = () => {
     const { outerContainerEl, innerContainerEl } = createContainerElems('login')
 
@@ -140,6 +144,7 @@ const showLogin = () => {
 
 }
 
+/// Prikazuje registraciju
 const showRegister = async () => {
     const { outerContainerEl, innerContainerEl } = createContainerElems('register')
 

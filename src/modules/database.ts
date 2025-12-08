@@ -1,5 +1,6 @@
 import { debugEnabled } from "./game"
 
+/// Pitamo bazu postoji li ime u bazi. Koristi se pri registraciji
 export const nameExistsInDb = async (name: string): Promise<boolean> => {
     const dbData = await queryDb('/api/queryusers')
     for (let record of dbData) {
@@ -9,6 +10,7 @@ export const nameExistsInDb = async (name: string): Promise<boolean> => {
     return false
 }
 
+/// Pitamo bazu da li su ime i lozinka ispravni
 export const verifyLogin = async (name: string, password: string): Promise<boolean> => {
     const dbData = await queryDb('/api/queryusers')
     for (let record of dbData) {
@@ -18,6 +20,7 @@ export const verifyLogin = async (name: string, password: string): Promise<boole
     return false
 }
 
+/// Pišemo informacije novog korisnika u bazu
 export const writeToUserDb = async (name: string, password: string) => {
     await fetch('/api/writetouserdb', {
         method: 'PUT',
@@ -31,7 +34,7 @@ export const writeToUserDb = async (name: string, password: string) => {
     })
 }
 
-/// Piše rezultat u bazu.
+/// Piše rezultat igre u tablicu.
 export const writeResultToDb = async (name: string, start_time: string, end_time: string, time: string, date: string, score: number) => {
     await fetch('/api/writetoleaderboarddb', {
         method: 'PUT',
@@ -61,5 +64,3 @@ export const queryDb = async (apiURI: string) => {
     }
     return rows
 }
-
-

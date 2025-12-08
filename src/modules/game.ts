@@ -81,6 +81,7 @@ const initializeGame = async () => {
     }
 }
 
+/// Kad se stranica zatvori, šaljemo API request koji ažurira trenutnog igrača. 
 const onUnload = (_event: Event) => {
     fetch('/api/updatecurrentplayer', {
         method: 'PUT',
@@ -102,10 +103,12 @@ if (document.location.pathname === '/home') {
     window.onpagehide = onUnload
 }
 
+/// Kad korisnik pokuša zatvoriti stranicu, pitamo da li su sigurni
 const onTryExit = (event: Event) => {
     event.preventDefault()
 }
 
+/// Postavljamo početno vrijeme i počinjemo slušati za pokušaj izlazak iz igre
 export const setStartTime = () => {
     startTime = new Date()
     window.addEventListener('beforeunload', onTryExit)
@@ -692,7 +695,7 @@ export const calculateEndTime = () => {
     return ((minutes < 10) ? '0' : '') + minutes + ':' + ((seconds < 10) ? '0' : '') + seconds
 }
 
-
+/// Ažuriranje trenutnog igrača, ako nemamo igrača onda ne prikazujemo relevantne elemente
 export const updateCurrentPlayer = () => {
     const currentplayerdiv = document.getElementById('currentplayer')
     const currentplayertext = document.getElementById('currentplayertext')
@@ -723,6 +726,7 @@ export const updateCurrentPlayer = () => {
     }
 }
 
+/// Odjavljujemo igrača i pokazujemo login
 const logOut = () => {
     gameState.player_name = '/'
     showGreeter()
