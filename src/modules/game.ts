@@ -90,12 +90,7 @@ const onUnload = (_event: Event) => {
         },
         body: `${gameState.player_name}`
     })
-    if (gameState.player_name !== '/') {
-        if (!endTime) {
-            endTime = new Date()
-        }
-        database.writeResultToDb(gameState.player_name, generateFancyHoursMinutes(startTime), generateFancyHoursMinutes(endTime), calcTimeDiff(startTime, endTime), generateFancyDate(endTime), calculateScore())
-    }
+    writeGame()
 }
 
 if (document.location.pathname === '/home') {
@@ -114,6 +109,16 @@ export const setStartTime = () => {
     window.addEventListener('beforeunload', onTryExit)
 }
 
+/// Zapisuje rezultat u bazu
+const writeGame = () => {
+    if (gameState.player_name !== '/') {
+        if (!endTime) {
+            endTime = new Date()
+        }
+        database.writeResultToDb(gameState.player_name, generateFancyHoursMinutes(startTime), generateFancyHoursMinutes(endTime), calcTimeDiff(startTime, endTime), generateFancyDate(endTime), calculateScore())
+    }
+}
+
 // Vrijeme početka, milisekunde on 01.01.1970.
 let startTime: Date
 
@@ -124,6 +129,10 @@ export const resetCards = () => {
 
     const victoryElement = document.getElementById('victory-container-outer')
     victoryElement?.remove()
+
+    if (calculateScore() > 0) {
+        writeGame()
+    }
 
     // clear decks
     for (let i = 0; i < 7; i++) {
